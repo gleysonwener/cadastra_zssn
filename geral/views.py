@@ -165,7 +165,7 @@ def rel_porcentagem_infectados(request):
 def rel_porcentagem_nao_infectados(request):
     
     sobreviventes = Sobrevivente.objects.all()
-    sobrevivente_nao_infectado = Sobrevivente.filter(infectado=False)
+    sobrevivente_nao_infectado = sobreviventes.filter(infectado=False)
     percentual_nao_infectados = sobrevivente_nao_infectado.count() / sobreviventes.count() * 100
  
     return Response({'Porcentagem de Sobreviventes Infectados': '{0:.2f}'.format(percentual_nao_infectados)})
@@ -175,8 +175,8 @@ def rel_porcentagem_nao_infectados(request):
 @api_view(['GET'])
 def rel_media_itens_sobreviventes(request):
     
-    sobreviventes = Sobreviventes.objects.count()
-    inventario = Inventario.objects.values('item__nome').order_by('item').annotate(total_items=Sum('quantidade'))
+    sobreviventes = Sobrevivente.objects.count()
+    inventario = Inventario.objects.values('item__nome').order_by('item').annotate(total_itens=Sum('quantidade'))
     
     print('inventario.all', inventario.all())
 
@@ -187,7 +187,7 @@ def rel_media_itens_sobreviventes(request):
         rel_data.append(
             {
                 'item': invent.get('item__nome'),
-                'media_de_sobreviventes': '{0:.2f}'.format(invent.get('total_items') / Sobreviventes)
+                'media_de_sobreviventes': '{0:.2f}'.format(invent.get('total_itens') / sobreviventes)
             }
         )
 
