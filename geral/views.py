@@ -1,39 +1,45 @@
 from .serializers import ItemSerializer, SobreviventeSerializer, InventarioSerializer
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.decorators import api_view
-from .models import Item, Survivor, Inventory
+from .models import Item, Sobrevivente, Inventario
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
 
 
+
+# listar e cadastrar itens
 class ItemListCreateAPIView(ListCreateAPIView):
-    # listar e cadastrar itens
+    
     serializer_class = ItemSerializer
     queryset = Item.objects.all()
-    permission_classes = [IsAdminUser]
 
 
+
+#listar e cadastrar os sobreviventes
 class SobreviventeListCreateAPIView(ListCreateAPIView):
-    #listar e cadastrar os sobreviventes
+    
     serializer_class = SobreviventeSerializer
     queryset = Sobrevivente.objects.all()
 
 
+
+#listar e cadastrar o inventario de cada sobrevivente
 class InventarioListCreateAPIView(ListCreateAPIView):
-    #listar e cadastrar o inventario de cada sobrevivente
+    
     serializer_class = InventarioSerializer
     queryset = Inventario.objects.all()
-    permission_classes = [IsAdminUser]
 
 
+
+# atualizando as informações do sobrevivente
 class SobreviventeLocalUpdate(APIView):
     
-    # atualizando as informações do sobrevivente
+
     def patch(self, request, sobrevivente_id):
+
         sobrevivente = get_object_or_404(Sobrevivente, pk=sobrevivente_id)
         serializer = SobreviventeSerializer(Sobrevivente, data=request.data, partial=True)
         if serializer.is_valid():
@@ -42,9 +48,11 @@ class SobreviventeLocalUpdate(APIView):
         return Response(status=status.HTTP_400_BAD_REQUEST, data={'message': 'Não foi possível fazer a atualização'})
 
 
+
+# troca de itens do sobrevivente
 @api_view(['POST'])
 def troca_itens(request):
-    # troca de itens do sobrevivente
+    
     try:
 
         sobrevivente1 = Sobrevivente.objects.get(id=request.data.get('sobrevivente1'), infectado=False)
@@ -104,89 +112,108 @@ def troca_itens(request):
 
         return Response({'message': 'Não foi possível efetuar a troca'})
     
-    return Response({'message': "Você nao pode trocar item com você mesmo})
+    return Response({'message': 'Você nao pode trocar item com você'})
+
 
 
 @api_view(['POST'])
-def mark_survivor_as_infected(request):
-    """
-    Marca um sobrevivente como infectado. É necessário fornecer a informação de 3 sobreviventes que confirmam a infecção e a informação do
-    infectado.
-    """
+def marca_infectado(request):
     try:
-        survivor1 = Survivor.objects.get(id=request.data.get('survivor1'), infected=False)
-        survivor2 = Survivor.objects.get(id=request.data.get('survivor2'), infected=False)
-        survivor3 = Survivor.objects.get(id=request.data.get('survivor3'), infected=False)
-        survivor_infected = Survivor.objects.get(id=request.data.get('survivor_infected'))
-    except Survivor.DoesNotExist:
-        return Response({'message': _('Confirme se todos os sobreviventes estão cadastrados no sistema e que não estão infectados.')})
-    survivor_list = set([survivor1, survivor2, survivor3])
-    if len(survivor_list) >= 3 and survivor_infected not in survivor_list:
-        if survivor_infected.infected:
-            return Response({'message': _('Sobrevivente já marcado como infectado.')})
+        sobrevivente1 = Sobrevivente.objects.get(id=request.data.get('sobrevivente'), infectado=False)
+        sobrevivente2 = Sobrevivente.objects.get(id=request.data.get('sobrevivente2'), infectado=False)
+        sobrevivente3 = Sobrevivente.objects.get(id=request.data.get('sobrevivente3'), infectado=False)
+        
+        sobrevivente_infectado = Sobrevivente.objects.get(id=request.data.get('sobrevivente_infectado'))
+
+    except Sobrevivente.DoesNotExist:
+
+        return Response({'message': 'Veja se ossobreviventes foram cadastrados no sistema e não estao infectados'})
+
+        
+    lista_sobreviventes = set([sobrevivente1, sobrevivente2, sobrevivente3])
+    
+    if len(lista_sobreviventes) >= 3 and sobrevivente_infectado not in lista_sobreviventes:
+
+        if sobrevivente_infectado.infectado:
+
+            return Response({'message': 'marcado como infectado'})
+        
         else:
-            survivor_infected.infected = True
-            survivor_infected.save()
-        return Response({'message': _('Sobrevivente marcado como infectado.')})
-    return Response({'message': _('Operação não realizada. É preciso três sobreviventes únicos e o suspeito de estar infectado não pode ser quem acusa.')})
 
-#continuar...
+            sobrevivente_infectado.infectado = True
+            sobrevivente_infectado.save()
+        
+        return Response({'message': 'Sobrevivente foi marcado como infectado'})
+
+    return Response({'message': 'Não foi possível realizar a operação. É necessário três sobreviventes únicos e o suspeito de estar infectado não pode ser quem acusa'})
+
+
+# relatórios
+# percentual infectados 
 @api_view(['GET'])
-def survivors_percent_infected_report(request):
-    """
-    Retorna o percentual de sobreviventes infectados.
-    """
-    survivors = Survivor.objects.all()
-    infected_survivors = survivors.filter(infected=True)
-    percents = infected_survivors.count() / survivors.count() * 100
-    return Response({'survivors_percent_infected': '{0:.2f}'.format(percents)})
+def rel_porcentagem_infectados(request):
+
+    sobreviventes = Sobrevivente.objects.all()
+    sobrevivente_infectado = sobreviventes.filter(infectado=True)
+    percentual_infectados = sobrevivente_infectado.count() / sobreviventes.count() * 100
+
+    return Response({'Porcentagem de Sobreviventes Infectados': '{0:.2f}'.format(percentual_infectados)})
 
 
+#percentual não infectados
 @api_view(['GET'])
-def survivors_percent_not_infected_report(request):
-    """
-    Retorna o percentual de sobreviventes não infectados.
-    """
-    survivors = Survivor.objects.all()
-    not_infected_survivors = survivors.filter(infected=False)
-    percents = not_infected_survivors.count() / survivors.count() * 100
-    return Response({'survivors_percent_not_infected': '{0:.2f}'.format(percents)})
+def rel_porcentagem_nao_infectados(request):
+    
+    sobreviventes = Sobrevivente.objects.all()
+    sobrevivente_nao_infectado = Sobrevivente.filter(infectado=False)
+    percentual_nao_infectados = sobrevivente_nao_infectado.count() / sobreviventes.count() * 100
+ 
+    return Response({'Porcentagem de Sobreviventes Infectados': '{0:.2f}'.format(percentual_nao_infectados)})
 
 
+# média de itens / sobreviventes
 @api_view(['GET'])
-def average_item_by_survivors_report(request):
-    """
-    Retorna a média de itens por sobreviventes.
-    """
-    survivors = Survivor.objects.count()
-    inventory = Inventory.objects.values('item__name').order_by('item').annotate(total_items=Sum('quantity'))
-    print('inventory.all', inventory.all())
-    report_data = []
-    for i in inventory:
-        report_data.append(
+def rel_media_itens_sobreviventes(request):
+    
+    sobreviventes = Sobreviventes.objects.count()
+    inventario = Inventario.objects.values('item__nome').order_by('item').annotate(total_items=Sum('quantidade'))
+    
+    print('inventario.all', inventario.all())
+
+    rel_data = []
+
+    for invent in inventario:
+        
+        rel_data.append(
             {
-                'item': i.get('item__name'),
-                'survivor_average': '{0:.2f}'.format(i.get('total_items') / survivors)
+                'item': invent.get('item__nome'),
+                'media_de_sobreviventes': '{0:.2f}'.format(invent.get('total_items') / Sobreviventes)
             }
         )
-    return Response(report_data)
+
+    return Response(rel_data)
 
 
+
+# quantidade de pontos perdidos
 @api_view(['GET'])
-def points_lost_by_infected_survivors_report(request):
-    """
-    Retorna a quantidade de pontos perdidos por conta dos sobreviventes infectados.
-    """
-    infected_survivors = Survivor.objects.filter(infected=True)
-    infected_survivors_list = []
-    total_points_lost = 0
-    for s in infected_survivors:
-        infected_survivors_list.append(s.name)
-        inventory = Inventory.objects.filter(survivor=s)
-        for i in inventory:
-            total_points_lost += i.item.points
-    report_data = {
-        'total_points_lost': total_points_lost,
-        'infected_survivors': infected_survivors_list
+def rel_pontos_perdidos(request):
+    
+    sobreviventes_infectados = Sobrevivente.objects.filter(infectado=True)
+    lista_soreviventes_infectados = []
+    total_pontos_perdidos = 0
+
+    for sob in sobreviventes_infectados:
+    
+        lista_soreviventes_infectados.append(sob.nome)
+        inventario = Inventario.objects.filter(sobrevivente=sob)
+    
+        for invent in inventario:
+            total_pontos_perdidos += sob.item.pontos
+    
+    rel_data = {
+        'total_pontos_perdidos': total_pontos_perdidos,
+        'lista_soreviventes_infectados': lista_soreviventes_infectados
     }
-    return Response(report_data)
+    
+    return Response(rel_data)

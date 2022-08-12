@@ -1,4 +1,4 @@
-from . model import Sobrevivente, Item, Inventario
+from . models import Item, Sobrevivente, Inventario
 from rest_framework import serializers
 
 

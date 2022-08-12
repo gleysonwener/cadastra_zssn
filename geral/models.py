@@ -7,8 +7,8 @@ class Item(models.Model):
     pontos = models.PositiveIntegerField('Pontos')
 
     class Meta:
-        verbose_name = _('Item')
-        verbose_name_plural = ('Itens')
+        verbose_name = 'Item'
+        verbose_name_plural = 'Itens'
         ordering = ['id']
 
     def __str__(self):
@@ -37,6 +37,7 @@ class Sobrevivente(models.Model):
 
 
 class Inventario(models.Model):
+
     sobrevivente = models.ForeignKey(Sobrevivente, verbose_name='Sobrevivente', on_delete=models.CASCADE)
     item = models.ForeignKey(Item, verbose_name='Item', on_delete=models.CASCADE)
     quantidade = models.PositiveIntegerField('Quantidade')
