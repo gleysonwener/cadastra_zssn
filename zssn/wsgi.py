@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.1/howto/deployment/wsgi/
 
 import os
 from dj_database_url import parse as dburl
+from dj_static import Cling
 
 from django.core.wsgi import get_wsgi_application
 
