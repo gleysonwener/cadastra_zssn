@@ -1,6 +1,7 @@
 from .serializers import ItemSerializer, SobreviventeSerializer, InventarioSerializer
 from django.db.models import Sum
-from django.shortcuts import get_object_or_404
+
+from django.shortcuts import get_object_or_404, render
 from rest_framework.decorators import api_view
 from .models import Item, Sobrevivente, Inventario
 from rest_framework.generics import ListCreateAPIView
@@ -217,3 +218,6 @@ def rel_pontos_perdidos(request):
     }
     
     return Response(rel_data)
+
+def index(request):
+    return render(request, 'index.html', {})
